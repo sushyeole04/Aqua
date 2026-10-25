@@ -1,0 +1,192 @@
+datasource db {
+  provider = "sqlite"
+}
+
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "library"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  phone     String   @unique
+  email     String?  @unique
+  name      String
+  password  String
+  role      String   @default("CUSTOMER") // "CUSTOMER", "ADMIN", "DRIVER"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customerProfile  CustomerProfile?
+  adminProfile     AdminProfile?
+  driverDeliveries Delivery[]       @relation("DriverDeliveries")
+  notifications    Notification[]
+  auditLogs        AuditLog[]
+}
+
+model CustomerProfile {
+  id              String             @id @default(uuid())
+  userId          String             @unique
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  qrCodeId        String             @unique // Unique customer identifier QR
+  referralCode    String             @unique
+  referredBy      String?
+  walletBalance   Float              @default(0.0)
+  pendingDues     Float              @default(0.0)
+  creditLimit     Float              @default(5000.0)
+  duePaymentDate  DateTime?
+  loyaltyPoints   Int                @default(0)
+  address         String
+  lat             Float?
+  lng             Float?
+  subStatus       String             @default("CANCELLED") // "ACTIVE", "PAUSED", "CANCELLED"
+  subQuantity     Int                @default(0)
+  subSchedule     String?            // e.g. "DAILY", "MON-WED-FRI"
+  lastDeliveryDate String?
+  securityDeposit Float              @default(0.0)
+  
+  orders          Order[]
+  payments        Payment[]
+  invoices        Invoice[]
+  referrals       CustomerReferral[] @relation("ReferredBy")
+  referredList    CustomerReferral[] @relation("ReferredUser")
+  jarLedger       CustomerJarLedger?
+  jarTransactions JarTransaction[]
+}
+
+model AdminProfile {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dept   String @default("Operations")
+}
+
+model Order {
+  id             String      @id @default(uuid())
+  customerId     String
+  customer       CustomerProfile @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  type           String      @default("ONCE") // "ONCE", "SUBSCRIPTION"
+  quantity       Int
+  status         String      @default("RECEIVED") // "RECEIVED", "ACCEPTED", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"
+  totalAmount    Float
+  paymentStatus  String      @default("PENDING") // "PENDING", "PAID", "FAILED", "REFUNDED"
+  paymentMethod  String      @default("COD") // "UPI", "COD", "PAY_LATER"
+  notes          String?
+  scheduledDate  DateTime    @default(now())
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  delivery       Delivery?
+  payments       Payment[]
+  invoices       Invoice[]
+}
+
+model Delivery {
+  id               String      @id @default(uuid())
+  orderId          String      @unique
+  order            Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  driverId         String?
+  driver           User?       @relation("DriverDeliveries", fields: [driverId], references: [id])
+  deliveredAt      DateTime?
+  emptyJarsReturned Int        @default(0)
+  damagedJars      Int         @default(0)
+  lostJars         Int         @default(0)
+  rating           Int?        // Customer rating
+  feedback         String?
+  routeCoordinates String?     // Serialized JSON route path
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  customerId    String
+  customer      CustomerProfile @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  orderId       String?
+  order         Order?        @relation(fields: [orderId], references: [id])
+  amount        Float
+  method        String        // "UPI", "COD", "PAY_LATER"
+  status        String        @default("PENDING") // "PENDING", "PAID", "FAILED"
+  txRef         String?       // Transaction ID from Razorpay / UPI
+  paidAt        DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Invoice {
+  id          String          @id @default(uuid())
+  customerId  String
+  customer    CustomerProfile @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  orderId     String?
+  order       Order?          @relation(fields: [orderId], references: [id])
+  invoiceNum  String          @unique
+  subtotal    Float
+  cgst        Float
+  sgst        Float
+  total       Float
+  pdfUrl      String?
+  dueDate     DateTime?
+  createdAt   DateTime        @default(now())
+}
+
+model Inventory {
+  id            String   @id @default(uuid())
+  availableJars Int      @default(100)
+  returnedJars  Int      @default(0)
+  damagedJars   Int      @default(0)
+  lostJars      Int      @default(0)
+  updatedAt     DateTime @updatedAt
+}
+
+model CustomerJarLedger {
+  id            String          @id @default(uuid())
+  customerId    String          @unique
+  customer      CustomerProfile @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  deliveredJars Int             @default(0)
+  collectedJars Int             @default(0)
+  balance       Int             @default(0)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+model JarTransaction {
+  id         String          @id @default(uuid())
+  customerId String
+  customer   CustomerProfile @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  type       String          // "DELIVERY" or "COLLECTION"
+  quantity   Int
+  remarks    String?
+  createdAt  DateTime        @default(now())
+}
+
+model CustomerReferral {
+  id             String          @id @default(uuid())
+  referrerId     String
+  referrer       CustomerProfile @relation("ReferredBy", fields: [referrerId], references: [id], onDelete: Cascade)
+  referredUserId String
+  referredUser   CustomerProfile @relation("ReferredUser", fields: [referredUserId], references: [id], onDelete: Cascade)
+  rewardCredits  Float           @default(50.0)
+  status         String          @default("COMPLETED") // "PENDING", "COMPLETED"
+  createdAt      DateTime        @default(now())
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  message     String
+  type        String   // "ORDER", "PAYMENT", "INVENTORY", "PROMO"
+  channels    String   // Serialized JSON array: e.g. '["SMS", "WHATSAPP", "PUSH"]'
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String
+  details   String
+  createdAt DateTime @default(now())
+}
