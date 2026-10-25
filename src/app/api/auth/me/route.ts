@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { prisma } from '@/utils/db';
-import { verifyJWT } from '@/utils/auth';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'chhatrapati-aqua-super-secret-key-123456';
+import { verifyJWT, getJwtSecret } from '@/utils/auth';
 
 export async function GET() {
   try {
@@ -17,7 +15,7 @@ export async function GET() {
       );
     }
 
-    const decoded = await verifyJWT(token, JWT_SECRET);
+    const decoded = await verifyJWT(token, getJwtSecret());
     if (!decoded) {
       const response = NextResponse.json(
         { error: 'Invalid or expired token' },

@@ -1,15 +1,13 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { prisma } from '@/utils/db';
-import { verifyJWT } from '@/utils/auth';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'chhatrapati-aqua-super-secret-key-123456';
+import { verifyJWT, getJwtSecret } from '@/utils/auth';
 
 async function getAuthUser() {
   const cookieStore = await cookies();
   const token = cookieStore.get('aqua_token')?.value;
   if (!token) return null;
-  return await verifyJWT(token, JWT_SECRET);
+  return await verifyJWT(token, getJwtSecret());
 }
 
 export async function GET(request: Request) {

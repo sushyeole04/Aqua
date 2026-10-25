@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { verifyJWT } from '@/utils/auth';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'chhatrapati-aqua-super-secret-key-123456';
+import { verifyJWT, getJwtSecret } from '@/utils/auth';
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -19,7 +17,7 @@ export async function proxy(request: NextRequest) {
 
   let decoded = null;
   if (token) {
-    decoded = await verifyJWT(token, JWT_SECRET);
+    decoded = await verifyJWT(token, getJwtSecret());
   }
 
   // 1. Unauthenticated users trying to access protected paths or the root path

@@ -1,3 +1,19 @@
+/**
+ * Returns the JWT secret from the environment.
+ * Throws at runtime if the variable is missing so misconfiguration
+ * is caught immediately rather than silently falling back to a weak key.
+ */
+export function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error(
+      'JWT_SECRET environment variable is not set. ' +
+      'Please add a strong secret to your .env file.'
+    );
+  }
+  return secret;
+}
+
 // Web Crypto API signature helper for Next.js Edge Runtime compatibility
 export async function signJWT(payload: any, secret: string): Promise<string> {
   const header = { alg: 'HS256', typ: 'JWT' };

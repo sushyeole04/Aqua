@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/utils/db';
-import { signJWT } from '@/utils/auth';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'chhatrapati-aqua-super-secret-key-123456';
+import { signJWT, getJwtSecret } from '@/utils/auth';
 
 export async function POST(request: Request) {
   try {
@@ -50,7 +48,7 @@ export async function POST(request: Request) {
       phone: user.phone
     };
 
-    const token = await signJWT(tokenPayload, JWT_SECRET);
+    const token = await signJWT(tokenPayload, getJwtSecret());
 
     // Set cookie
     const response = NextResponse.json({

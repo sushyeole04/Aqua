@@ -1,9 +1,8 @@
 import type { NextConfig } from "next";
-import path from "path";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  outputFileTracingRoot: path.join(__dirname),
+  // Serverless output for Vercel deployment
+  // outputFileTracingRoot is not needed for PostgreSQL (was required for better-sqlite3 native binary)
 };
 
 export default nextConfig;

@@ -1,15 +1,13 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { prisma } from '@/utils/db';
-import { verifyJWT } from '@/utils/auth';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'chhatrapati-aqua-super-secret-key-123456';
+import { verifyJWT, getJwtSecret } from '@/utils/auth';
 
 async function checkAdminAuth() {
   const cookieStore = await cookies();
   const token = cookieStore.get('aqua_token')?.value;
   if (!token) return null;
-  const decoded = await verifyJWT(token, JWT_SECRET);
+  const decoded = await verifyJWT(token, getJwtSecret());
   if (decoded && decoded.role === 'ADMIN') return decoded;
   return null;
 }
@@ -91,7 +89,7 @@ export async function PUT(request: Request) {
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const decoded = await verifyJWT(token, JWT_SECRET);
+    const decoded = await verifyJWT(token, getJwtSecret());
     if (!decoded) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

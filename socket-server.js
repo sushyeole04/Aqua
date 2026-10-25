@@ -1,7 +1,14 @@
 const http = require('http');
 const { Server } = require('socket.io');
 
-const PORT = 3003;
+const PORT = process.env.PORT || 3003;
+
+// In production, restrict CORS to your Vercel frontend domain.
+// Set the FRONTEND_URL environment variable on your socket hosting platform.
+const allowedOrigins = process.env.FRONTEND_URL
+  ? [process.env.FRONTEND_URL]
+  : ['http://localhost:3000', 'http://localhost:3001'];
+
 const server = http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/plain' });
   res.end('Chhatrapati Aqua WebSocket Server is running.\n');
@@ -9,8 +16,9 @@ const server = http.createServer((req, res) => {
 
 const io = new Server(server, {
   cors: {
-    origin: '*', // Allow any client in development
-    methods: ['GET', 'POST']
+    origin: allowedOrigins,
+    methods: ['GET', 'POST'],
+    credentials: true,
   }
 });
 
@@ -82,5 +90,6 @@ server.listen(PORT, () => {
   console.log(`=============================================`);
   console.log(`  Chhatrapati Aqua Socket.io Live Server     `);
   console.log(`  Listening on port ${PORT}                 `);
+  console.log(`  Allowed origins: ${allowedOrigins.join(', ')}`);
   console.log(`=============================================`);
 });
