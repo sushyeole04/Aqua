@@ -22,15 +22,35 @@ export async function GET() {
       orderBy: { createdAt: 'desc' }
     });
 
-    const formatted = notifications.map(n => ({
-      id: n.id,
-      title: n.title,
-      message: n.message,
-      type: n.type as 'ORDER' | 'PAYMENT' | 'INVENTORY' | 'SYSTEM',
-      channels: JSON.parse(n.channels) as ('SMS' | 'WHATSAPP' | 'PUSH' | 'IN_APP')[],
-      isRead: n.isRead,
-      createdAt: n.createdAt.toISOString()
-    }));
+    interface NotificationRecord {
+      id: string;
+      title: string;
+      message: string;
+      type: string;
+      channels: string;
+      isRead: boolean;
+      createdAt: Date;
+    }
+
+    const formatted = notifications.map((n: NotificationRecord) => {
+      let channels: ('SMS' | 'WHATSAPP' | 'PUSH' | 'IN_APP')[] = [];
+      try {
+        const parsed = n.channels ? JSON.parse(n.channels) : [];
+        channels = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        channels = [];
+      }
+
+      return {
+        id: n.id,
+        title: n.title,
+        message: n.message,
+        type: n.type as 'ORDER' | 'PAYMENT' | 'INVENTORY' | 'SYSTEM',
+        channels,
+        isRead: n.isRead,
+        createdAt: n.createdAt.toISOString()
+      };
+    });
 
     return NextResponse.json({ notifications: formatted });
   } catch (error: any) {

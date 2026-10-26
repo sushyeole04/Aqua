@@ -17,7 +17,12 @@ export async function proxy(request: NextRequest) {
 
   let decoded = null;
   if (token) {
-    decoded = await verifyJWT(token, getJwtSecret());
+    try {
+      decoded = await verifyJWT(token, getJwtSecret());
+    } catch {
+      // JWT_SECRET not set or verification failed — treat as unauthenticated
+      decoded = null;
+    }
   }
 
   // 1. Unauthenticated users trying to access protected paths or the root path

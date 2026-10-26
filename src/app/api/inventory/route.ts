@@ -14,6 +14,11 @@ async function checkAdminAuth() {
 
 export async function GET() {
   try {
+    const auth = await checkAdminAuth();
+    if (!auth) {
+      return NextResponse.json({ error: 'Unauthorized: Admin access required' }, { status: 403 });
+    }
+
     let inventory = await prisma.inventory.findFirst();
     if (!inventory) {
       inventory = await prisma.inventory.create({

@@ -214,7 +214,7 @@ export default function AdminDashboard() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          available: inventory.available + Number(newStockQty)
+          availableJars: inventory.availableJars + Number(newStockQty)
         })
       });
 
